@@ -45,13 +45,13 @@ locals {
 resource "azurerm_resource_group" "web_server_rg" {
   count         = length(var.web_server)
   # name          = var.web_server[count.index].name
-  name          = "${var.tenantId}-${var.web_server[count.index].prefix}-web-rg"
+  name          = "${var.companyPrefix}-${var.web_server[count.index].prefix}-web-rg"
   location      = var.web_server[count.index].location
 }
 
 resource "azurerm_virtual_network" "web_server_vnet" {
   count = length(var.web_server)
-  name = "${var.tenantId}-${var.web_server[count.index].prefix}-${var.resource_prefix}-vnet"
+  name = "${var.companyPrefix}-${var.web_server[count.index].prefix}-${var.resource_prefix}-vnet"
   location = var.web_server[count.index].location
   resource_group_name = azurerm_resource_group.web_server_rg[count.index].name
   address_space = [var.web_server_address_space]
@@ -59,7 +59,7 @@ resource "azurerm_virtual_network" "web_server_vnet" {
 
 resource "azurerm_subnet" "web_server_subnet" {
   count = length(var.web_server)
-  name = "${var.tenantId}-${var.web_server[count.index].prefix}-${var.resource_prefix}-subnet"
+  name = "${var.companyPrefix}-${var.web_server[count.index].prefix}-${var.resource_prefix}-subnet"
   resource_group_name = azurerm_resource_group.web_server_rg[count.index].name
   virtual_network_name = azurerm_virtual_network.web_server_vnet[count.index].name
   address_prefixes = [var.web_server_address_prefix]
@@ -67,12 +67,12 @@ resource "azurerm_subnet" "web_server_subnet" {
 
 resource "azurerm_network_interface" "web_server_nic" {
   count = length(var.web_server)
-  name = "${var.tenantId}-${var.web_server[count.index].prefix}-${var.web_server_name}-nic"
+  name = "${var.companyPrefix}-${var.web_server[count.index].prefix}-${var.web_server_name}-nic"
   location      = var.web_server[count.index].location
   resource_group_name = azurerm_resource_group.web_server_rg[count.index].name
 
   ip_configuration {
-    name = "${var.tenantId}-${var.web_server[count.index].prefix}-${var.web_server_name}-ip"
+    name = "${var.companyPrefix}-${var.web_server[count.index].prefix}-${var.web_server_name}-ip"
     subnet_id = azurerm_subnet.web_server_subnet[count.index].id
     private_ip_address_allocation = "dynamic"
   }
@@ -80,7 +80,7 @@ resource "azurerm_network_interface" "web_server_nic" {
 
 resource "azurerm_public_ip" "web_server_public_ip" {
   count = length(var.web_server)
-  name = "${var.tenantId}-${var.web_server[count.index].prefix}-${var.resource_prefix}-public-ip"
+  name = "${var.companyPrefix}-${var.web_server[count.index].prefix}-${var.resource_prefix}-public-ip"
   location = var.web_server[count.index].location
   resource_group_name = azurerm_resource_group.web_server_rg[count.index].name
   allocation_method = var.environment == "production" ? "Static" : "Dynamic"
@@ -88,7 +88,7 @@ resource "azurerm_public_ip" "web_server_public_ip" {
 
 resource "azurerm_network_security_group" "web_server_nsg" {
   count = length(var.web_server)
-  name = "${var.tenantId}-${var.web_server[count.index].prefix}-${var.resource_prefix}-nsg"
+  name = "${var.companyPrefix}-${var.web_server[count.index].prefix}-${var.resource_prefix}-nsg"
   location = var.web_server[count.index].location
   resource_group_name = azurerm_resource_group.web_server_rg[count.index].name
 }

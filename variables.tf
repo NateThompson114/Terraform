@@ -22,7 +22,8 @@ variable "web_server" {
    ]   
 }
 
-variable "tenantId" {
+#! nt stands for Nate Thompson, but it is your company identifier
+variable "companyPrefix" {
   type = string
   default = "nt"
 }
