@@ -14,7 +14,7 @@
 
 ## Sub Id from specific Subscription below
 provider "azurerm" {  
-  subscription_id = "12345678-0000-1234-5678-000000000000"
+  # subscription_id = "12345678-0000-1234-5678-000000000000"
   features {}
 }
 
@@ -35,7 +35,17 @@ provider "azurerm" {
 # }
 
 locals {
-  
+  ##! This is a foreach in a foreach that can use the index to create x groups per a group of items in the list
+  event_hub_namespaces_environments = { 
+    for pair in setproduct(var.web_server, var.environment): "${pair[0]}.${pair[1]}" => {
+      index = index(var.web_server, pair[0])
+      env = pair[1]
+    }
+  }
+
+  list = {
+    "item" = "value"
+  }
 }
 
 ## resource <name of resource(actual azure resource)> <name(must be unique)>
@@ -83,7 +93,7 @@ resource "azurerm_public_ip" "web_server_public_ip" {
   name = "${var.companyPrefix}-${var.web_server[count.index].prefix}-${var.resource_prefix}-public-ip"
   location = var.web_server[count.index].location
   resource_group_name = azurerm_resource_group.web_server_rg[count.index].name
-  allocation_method = var.environment == "production" ? "Static" : "Dynamic"
+  allocation_method = var.environment[count.index] == "production" ? "Static" : "Dynamic"
 }
 
 resource "azurerm_network_security_group" "web_server_nsg" {
@@ -112,4 +122,24 @@ resource "azurerm_network_interface_security_group_association" "web_server_nsg_
   count = length(var.web_server)
   network_interface_id = azurerm_network_interface.web_server_nic[count.index].id
   network_security_group_id = azurerm_network_security_group.web_server_nsg[count.index].id
+}
+
+resource "azurerm_eventhub_namespace" "eventhub_namespace" {
+  count               = length(var.web_server)
+  name                = "${var.companyPrefix}-${var.web_server[count.index].prefix}-${var.resource_prefix}-Hub"
+  resource_group_name = (azurerm_resource_group.web_server_rg[count.index]).name
+  location            = (azurerm_resource_group.web_server_rg[count.index]).location
+  sku                 = "Standard"
+  capacity            = 1
+  tags                = module.azure_resourcename[count.index].common_tags
+}
+
+resource "azurerm_eventhub" "eventhub" {
+  for_each = local.event_hub_namespaces_environments
+  
+  name                = each.value.env
+  namespace_name      = azurerm_eventhub_namespace.eventhub_namespace[each.value.index].name
+  resource_group_name = azurerm_eventhub_namespace.eventhub_namespace[each.value.index].resource_group_name
+  partition_count     = 2
+  message_retention   = 1
 }

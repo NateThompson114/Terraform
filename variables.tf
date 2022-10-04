@@ -45,5 +45,5 @@ variable "web_server_name" {
 }
 
 variable "environment" {
-  type = string
+  type = list(string)
 }
